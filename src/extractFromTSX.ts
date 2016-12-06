@@ -36,31 +36,30 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
     if (isSyntaxKind<ts.ImportDeclaration>(node, SyntaxKind.ImportDeclaration)) {
       // `node.moduleSpecifier` is always `StringLiteral` by language spec.
       const moduleTokenName = (node.moduleSpecifier as ts.StringLiteral).text
-      if (moduleTokenName.match(REACTOR_MODULE_PATTERN)) {
-        if (node.importClause) {
-          if (isSyntaxKind<ts.NamespaceImport>(node.importClause.namedBindings, SyntaxKind.NamespaceImport)) {
-            // import * as reactor from '@extjs/reactor'
-            reactorNames.push(node.importClause.namedBindings.name.text)
-            reactifyNames = ['reactify']
-          }
-          else if (isSyntaxKind<ts.NamedImports>(node.importClause.namedBindings, SyntaxKind.NamedImports)) {
-            // import { reactify } from '@extjs/reactor'
-            const elements = node.importClause.namedBindings.elements
-            const reactifyNodes = elements.filter(e => {
-              return (e.propertyName && e.propertyName.text === REACTIFY) || (e.name.text === REACTIFY)
-            })
-            reactifyNames.push(...reactifyNodes.map(n => {
-              return n.name.text
-            }))
-          }
+      if (moduleTokenName.match(REACTOR_MODULE_PATTERN) && node.importClause) {
+        if (isSyntaxKind<ts.NamespaceImport>(node.importClause.namedBindings, SyntaxKind.NamespaceImport)) {
+          // import * as reactor from '@extjs/reactor'
+          reactorNames.push(node.importClause.namedBindings.name.text)
+          reactifyNames = ['reactify']
+        }
+        else if (isSyntaxKind<ts.NamedImports>(node.importClause.namedBindings, SyntaxKind.NamedImports)) {
+          // import { reactify } from '@extjs/reactor'
+          const elements = node.importClause.namedBindings.elements
+          const reactifyNodes = elements.filter(e => {
+            return (e.propertyName && e.propertyName.text === REACTIFY) || (e.name.text === REACTIFY)
+          })
+          reactifyNames.push(...reactifyNodes.map(n => {
+            return n.name.text
+          }))
         }
       }
-      else if (moduleTokenName.match(COMPONENT_MODULE_PATTERN)) {
+      else if (moduleTokenName.match(COMPONENT_MODULE_PATTERN) && node.importClause) {
         // import { Grid } from '@extjs/reactor/?
-        if (node.importClause && isSyntaxKind<ts.NamedImports>(node.importClause.namedBindings, SyntaxKind.NamedImports)) {
+        if (isSyntaxKind<ts.NamedImports>(node.importClause.namedBindings, SyntaxKind.NamedImports)) {
           const elements = node.importClause.namedBindings.elements
           for (let e of elements) {
-            types[e.name.text] = { xtype: `"${e.propertyName ? e.propertyName.text.toLowerCase() : e.name.text.toLowerCase()}"` }
+            const value = e.propertyName ? e.propertyName.text.toLowerCase() : e.name.text.toLowerCase()
+            types[e.name.text] = { xtype: `"${value}"` }
           }
         }
       }
@@ -71,15 +70,17 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
       let call = isSyntaxKind<ts.CallExpression>(node.initializer, SyntaxKind.CallExpression) ?
         // reactify(...)
         node.initializer :
-        isSyntaxKind<ts.AsExpression>(node.initializer, SyntaxKind.AsExpression) && isSyntaxKind<ts.CallExpression>(node.initializer.expression, SyntaxKind.CallExpression) ?
+        (isSyntaxKind<ts.AsExpression>(node.initializer, SyntaxKind.AsExpression) &&
+          isSyntaxKind<ts.CallExpression>(node.initializer.expression, SyntaxKind.CallExpression)) ?
           // reactor.reactify(...)
           node.initializer.expression :
           undefined
 
       if (call) {
-        if (isSyntaxKind<ts.PropertyAccessExpression>(call.expression, SyntaxKind.PropertyAccessExpression) &&
+        if ((isSyntaxKind<ts.PropertyAccessExpression>(call.expression, SyntaxKind.PropertyAccessExpression) &&
           isSyntaxKind<ts.Identifier>(call.expression.expression, SyntaxKind.Identifier) &&
-          ~reactorNames.indexOf(call.expression.expression.text) && ~reactifyNames.indexOf(call.expression.name.text) ||
+          ~reactorNames.indexOf(call.expression.expression.text) &&
+          ~reactifyNames.indexOf(call.expression.name.text)) ||
           (isSyntaxKind<ts.Identifier>(call.expression, SyntaxKind.Identifier) &&
             ~reactifyNames.indexOf((call.expression as ts.Identifier).text))) {
           if (isSyntaxKind<ts.Identifier>(node.name, SyntaxKind.Identifier)) {
@@ -152,9 +153,5 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
 }
 
 function isSyntaxKind<T extends ts.Node>(node: ts.Node | undefined, ...kinds: SyntaxKind[]): node is T {
-  if (!node) {
-    return false
-  }
-
-  return kinds.some(k => k === node.kind)
+  return !!node && kinds.some(k => k === node.kind)
 }
