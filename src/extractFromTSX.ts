@@ -19,20 +19,33 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
   let reactifyNames: string[] = []
   let reactorNames: string[] = []
   traverse(sourceFile)
+
+  function addToTypes(name: string, arg: ts.Node) {
+    if (isSyntaxKind<ts.StringLiteral>(arg, SyntaxKind.StringLiteral)) {
+      const xtype = arg.text
+      if (xtype) {
+        types[name] = { xtype: `"${xtype.toLowerCase()}"` }
+      }
+    }
+    else if (isSyntaxKind<ts.Identifier>(arg, SyntaxKind.Identifier)) {
+      types[name] = { xclass: `"${arg.text}"` }
+    }
+  }
+
   function traverse(node: ts.Node) {
-    if (node.kind === SyntaxKind.ImportDeclaration) {
-      const declaration = node as ts.ImportDeclaration
-      const moduleTokenName = (declaration.moduleSpecifier as ts.StringLiteral).text
+    if (isSyntaxKind<ts.ImportDeclaration>(node, SyntaxKind.ImportDeclaration)) {
+      // `node.moduleSpecifier` is always `StringLiteral` by language spec.
+      const moduleTokenName = (node.moduleSpecifier as ts.StringLiteral).text
       if (moduleTokenName.match(REACTOR_MODULE_PATTERN)) {
-        if (declaration.importClause && declaration.importClause.namedBindings) {
-          if (declaration.importClause.namedBindings.kind === SyntaxKind.NamespaceImport) {
+        if (node.importClause) {
+          if (isSyntaxKind<ts.NamespaceImport>(node.importClause.namedBindings, SyntaxKind.NamespaceImport)) {
             // import * as reactor from '@extjs/reactor'
-            reactorNames.push(declaration.importClause.namedBindings.name.text)
+            reactorNames.push(node.importClause.namedBindings.name.text)
             reactifyNames = ['reactify']
           }
-          else if (declaration.importClause.namedBindings.kind === SyntaxKind.NamedImports) {
+          else if (isSyntaxKind<ts.NamedImports>(node.importClause.namedBindings, SyntaxKind.NamedImports)) {
             // import { reactify } from '@extjs/reactor'
-            const elements = declaration.importClause.namedBindings.elements
+            const elements = node.importClause.namedBindings.elements
             const reactifyNodes = elements.filter(e => {
               return (e.propertyName && e.propertyName.text === REACTIFY) || (e.name.text === REACTIFY)
             })
@@ -44,8 +57,8 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
       }
       else if (moduleTokenName.match(COMPONENT_MODULE_PATTERN)) {
         // import { Grid } from '@extjs/reactor/?
-        if (declaration.importClause && declaration.importClause.namedBindings) {
-          const elements: any[] = (declaration.importClause.namedBindings as any).elements
+        if (node.importClause && isSyntaxKind<ts.NamedImports>(node.importClause.namedBindings, SyntaxKind.NamedImports)) {
+          const elements = node.importClause.namedBindings.elements
           for (let e of elements) {
             types[e.name.text] = { xtype: `"${e.propertyName ? e.propertyName.text.toLowerCase() : e.name.text.toLowerCase()}"` }
           }
@@ -54,44 +67,38 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
     }
     // Look for reactify calls. Keep track of the names of each component so we can map JSX tags to xtypes and
     // convert props to configs so Sencha Cmd can discover automatic dependencies in the manifest.
-    else if (node.kind === SyntaxKind.VariableDeclaration) {
-      const d = node as ts.VariableDeclaration
-      if (d.initializer) {
-        let call
-        if (d.initializer.kind === SyntaxKind.CallExpression) {
-          // reactify(...)
-          call = d.initializer
-        }
-        else if (d.initializer.kind === SyntaxKind.AsExpression && (d.initializer as ts.AsExpression).expression.kind === SyntaxKind.CallExpression) {
+    else if (isSyntaxKind<ts.VariableDeclaration>(node, SyntaxKind.VariableDeclaration)) {
+      let call = isSyntaxKind<ts.CallExpression>(node.initializer, SyntaxKind.CallExpression) ?
+        // reactify(...)
+        node.initializer :
+        isSyntaxKind<ts.AsExpression>(node.initializer, SyntaxKind.AsExpression) && isSyntaxKind<ts.CallExpression>(node.initializer.expression, SyntaxKind.CallExpression) ?
           // reactor.reactify(...)
-          call = (d as any).initializer.expression
-        }
+          node.initializer.expression :
+          undefined
 
-        if (call) {
-          if (call.expression.kind === SyntaxKind.PropertyAccessExpression && ~reactorNames.indexOf(call.expression.expression.text) && ~reactifyNames.indexOf(call.expression.name.text) ||
-            ~reactifyNames.indexOf((call.expression as ts.Identifier).text)) {
-            if (d.name.kind === SyntaxKind.Identifier) {
-              // example: const Grid = reactify('grid');
-              const varName = d.name.text
-              const arg = call.arguments[0]
-              if (!arg) {
-                return
-              }
-
-              if (arg.kind === SyntaxKind.StringLiteral) {
-                const xtype = (arg as ts.StringLiteral).text
-                if (xtype) {
-                  types[varName] = { xtype: `"${xtype.toLowerCase()}"` }
-                }
-              }
-              else if (arg.kind === SyntaxKind.Identifier) {
-                types[varName] = { xclass: `"${(arg as ts.Identifier).text}"` }
-              }
+      if (call) {
+        if (isSyntaxKind<ts.PropertyAccessExpression>(call.expression, SyntaxKind.PropertyAccessExpression) &&
+          isSyntaxKind<ts.Identifier>(call.expression.expression, SyntaxKind.Identifier) &&
+          ~reactorNames.indexOf(call.expression.expression.text) && ~reactifyNames.indexOf(call.expression.name.text) ||
+          (isSyntaxKind<ts.Identifier>(call.expression, SyntaxKind.Identifier) &&
+            ~reactifyNames.indexOf((call.expression as ts.Identifier).text))) {
+          if (isSyntaxKind<ts.Identifier>(node.name, SyntaxKind.Identifier)) {
+            // example: const Grid = reactify('grid');
+            const varName = node.name.text
+            const arg = call.arguments[0]
+            if (!arg) {
+              return
             }
-            else if (d.name.kind === SyntaxKind.ArrayBindingPattern) {
-              // example: const [ Grid, Panel ] = reactify('grid', SomePanel);
-              for (let i = 0; i < d.name.elements.length; i++) {
-                const tagName = ((d.name.elements[i] as any).name as ts.Identifier).text
+
+            addToTypes(varName, arg)
+          }
+          else if (isSyntaxKind<ts.ArrayBindingPattern>(node.name, SyntaxKind.ArrayBindingPattern)) {
+            // example: const [ Grid, Panel ] = reactify('grid', SomePanel);
+            for (let i = 0; i < node.name.elements.length; i++) {
+              const element = node.name.elements[i]
+              if (isSyntaxKind<ts.BindingElement>(element, SyntaxKind.BindingElement) &&
+                isSyntaxKind<ts.Identifier>(element.name, SyntaxKind.Identifier)) {
+                const tagName = element.name.text
                 if (!tagName) {
                   continue
                 }
@@ -99,59 +106,55 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
                 if (!arg) {
                   continue
                 }
-                if (arg.kind === SyntaxKind.StringLiteral) {
-                  const xtype = (arg as ts.StringLiteral).text
-                  if (xtype) {
-                    types[tagName] = { xtype: `"${xtype.toLowerCase()}"` }
-                  }
-                }
-                else if (arg.kind === SyntaxKind.Identifier) {
-                  types[tagName] = { xclass: `"${(arg as ts.Identifier).text}"` }
-                }
+                addToTypes(tagName, arg)
               }
             }
           }
         }
       }
     }
-    else if (node.kind === SyntaxKind.JsxSelfClosingElement || node.kind === SyntaxKind.JsxOpeningElement) {
+    else if (isSyntaxKind<ts.JsxSelfClosingElement | ts.JsxOpeningElement>(node, SyntaxKind.JsxSelfClosingElement, SyntaxKind.JsxOpeningElement) &&
+      isSyntaxKind<ts.Identifier>(node.tagName, SyntaxKind.Identifier)) {
       // convert reactified components to Ext.create calls to put in the manifest
-      const e = (node as ts.JsxSelfClosingElement | ts.JsxOpeningElement)
-      const tag = (e.tagName as ts.Identifier).text
-      const type = types[tag]
+      const type = types[node.tagName.text]
       if (type) {
         const configs = { ...type };
-        for (let attribute of e.attributes) {
-          if (attribute.kind === SyntaxKind.JsxAttribute) {
+        for (let attribute of node.attributes) {
+          if (isSyntaxKind<ts.JsxAttribute>(attribute, SyntaxKind.JsxAttribute)) {
             const name = attribute.name.text
-            if (attribute.initializer) {
-              if (attribute.initializer.kind === SyntaxKind.StringLiteral) {
-                configs[name] = `"${attribute.initializer.text}"`
-              }
-              else if (attribute.initializer.kind === SyntaxKind.JsxExpression) {
-                const { expression } = attribute.initializer
-                if (expression) {
-                  if (expression.kind === SyntaxKind.ObjectLiteralExpression ||
-                    expression.kind === SyntaxKind.ArrayLiteralExpression) {
-                    configs[name] = expression.getText(sourceFile)
-                  }
+            if (isSyntaxKind<ts.StringLiteral>(attribute.initializer, SyntaxKind.StringLiteral)) {
+              configs[name] = `"${attribute.initializer.text}"`
+            }
+            else if (isSyntaxKind<ts.JsxExpression>(attribute.initializer, SyntaxKind.JsxExpression)) {
+              const { expression } = attribute.initializer
+              if (expression) {
+                if (isSyntaxKind<ts.ObjectLiteralExpression | ts.ArrayLiteralExpression>(expression, SyntaxKind.ObjectLiteralExpression, SyntaxKind.ArrayLiteralExpression)) {
+                  configs[name] = expression.getText(sourceFile)
                 }
               }
             }
           }
         }
 
-        const values: string[] = [];
+        const values: string[] = []
 
         for (let name in configs) {
           values.push(`${name}: ${configs[name]}`)
         }
 
-        statements.push(`Ext.create({${values.join(', ')}})`);
+        statements.push(`Ext.create({${values.join(', ')}})`)
       }
     }
     ts.forEachChild(node, traverse)
   }
 
   return statements;
-};
+}
+
+function isSyntaxKind<T extends ts.Node>(node: ts.Node | undefined, ...kinds: SyntaxKind[]): node is T {
+  if (!node) {
+    return false
+  }
+
+  return kinds.some(k => k === node.kind)
+}
