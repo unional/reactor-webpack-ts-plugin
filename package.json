@@ -1,0 +1,41 @@
+{
+  "name": "@extjs/reactor-webpack-ts-plugin",
+  "version": "0.1.13",
+  "description": "Creates a minimal build of the Ext JS framework for use in React apps.",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "tslint \"src/**/*.ts\"",
+    "test": "rimraf spec-out && tsc && ava \"spec-out/**/*.spec.js\"",
+    "watch": "rimraf spec-out && node scripts/watch.js spec-out/**/*.spec.js",
+    "verify": "npm run test && npm run lint && npm run dependency-check && npm run build",
+    "dependency-check": "dependency-check . --unused --no-dev && dependency-check . --missing --no-dev",
+    "preversion": "npm run verify",
+    "prepublish": "typings install && rimraf dist && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sencha/extjs-reactor.git"
+  },
+  "author": "unional",
+  "license": "MIT",
+  "homepage": "https://github.com/sencha/extjs-reactor/tree/master/packages/reactor-webpack-ts-plugin",
+  "dependencies": {
+    "astring": "^0.8.0",
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.5.4",
+    "typescript": "^2.2.0-dev.20161203",
+    "xtend": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/mkdirp": "^0.3.29",
+    "@types/rimraf": "0.0.28",
+    "@types/xtend": "^4.0.2",
+    "ava": "^0.17.0",
+    "dependency-check": "^2.6.0",
+    "tslint": "^4.0.2",
+    "tslint-config-unional": "^0.6.0",
+    "typings": "^2.0.0"
+  }
+}

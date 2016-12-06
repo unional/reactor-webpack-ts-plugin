@@ -1,0 +1,21 @@
+'use strict';
+
+const cp = require('child_process');
+
+let compiling = true;
+// TODO: `shell: true` seems to have problem on osx.
+// Need to verify and fix.
+cp.spawn('tsc', ['-w'], { shell: true })
+  .stdout.on('data', () => {
+    if (compiling) {
+      compiling = false;
+      cp.spawn('ava', ['-w', process.argv[2]], {
+        stdio: 'inherit',
+        shell: true
+      });
+    }
+    cp.spawnSync('npm', ['run', 'lint'], {
+      stdio: 'inherit',
+      shell: true
+    })
+  })
