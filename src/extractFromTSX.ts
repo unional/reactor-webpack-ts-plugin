@@ -24,13 +24,14 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
       const declaration = node as ts.ImportDeclaration
       const moduleTokenName = (declaration.moduleSpecifier as ts.StringLiteral).text
       if (moduleTokenName.match(REACTOR_MODULE_PATTERN)) {
-        // console.log(node)
         if (declaration.importClause && declaration.importClause.namedBindings) {
           if (declaration.importClause.namedBindings.kind === SyntaxKind.NamespaceImport) {
+            // import * as reactor from '@extjs/reactor'
             reactorNames.push(declaration.importClause.namedBindings.name.text)
-            reactifyNames = [ 'reactify' ]
+            reactifyNames = ['reactify']
           }
           else if (declaration.importClause.namedBindings.kind === SyntaxKind.NamedImports) {
+            // import { reactify } from '@extjs/reactor'
             const elements = declaration.importClause.namedBindings.elements
             const reactifyNodes = elements.filter(e => {
               return (e.propertyName && e.propertyName.text === REACTIFY) || (e.name.text === REACTIFY)
@@ -41,8 +42,8 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
           }
         }
       }
-      // look for: import { Grid } from '@extjs/reactor/?
       else if (moduleTokenName.match(COMPONENT_MODULE_PATTERN)) {
+        // import { Grid } from '@extjs/reactor/?
         if (declaration.importClause && declaration.importClause.namedBindings) {
           const elements: any[] = (declaration.importClause.namedBindings as any).elements
           for (let e of elements) {
@@ -55,25 +56,27 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
     // convert props to configs so Sencha Cmd can discover automatic dependencies in the manifest.
     else if (node.kind === SyntaxKind.VariableDeclaration) {
       const d = node as ts.VariableDeclaration
-      // console.log(d)
       if (d.initializer) {
         let call
         if (d.initializer.kind === SyntaxKind.CallExpression) {
+          // reactify(...)
           call = d.initializer
         }
-        else if (d.initializer.kind == SyntaxKind.AsExpression && (d.initializer as ts.AsExpression).expression.kind === SyntaxKind.CallExpression) {
+        else if (d.initializer.kind === SyntaxKind.AsExpression && (d.initializer as ts.AsExpression).expression.kind === SyntaxKind.CallExpression) {
+          // reactor.reactify(...)
           call = (d as any).initializer.expression
         }
 
         if (call) {
-          // console.log(call)
           if (call.expression.kind === SyntaxKind.PropertyAccessExpression && ~reactorNames.indexOf(call.expression.expression.text) && ~reactifyNames.indexOf(call.expression.name.text) ||
             ~reactifyNames.indexOf((call.expression as ts.Identifier).text)) {
             if (d.name.kind === SyntaxKind.Identifier) {
               // example: const Grid = reactify('grid');
               const varName = d.name.text
               const arg = call.arguments[0]
-              if (!arg) return
+              if (!arg) {
+                return
+              }
 
               if (arg.kind === SyntaxKind.StringLiteral) {
                 const xtype = (arg as ts.StringLiteral).text
@@ -89,9 +92,13 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
               // example: const [ Grid, Panel ] = reactify('grid', SomePanel);
               for (let i = 0; i < d.name.elements.length; i++) {
                 const tagName = ((d.name.elements[i] as any).name as ts.Identifier).text
-                if (!tagName) continue
+                if (!tagName) {
+                  continue
+                }
                 const arg = call.arguments[i]
-                if (!arg) continue
+                if (!arg) {
+                  continue
+                }
                 if (arg.kind === SyntaxKind.StringLiteral) {
                   const xtype = (arg as ts.StringLiteral).text
                   if (xtype) {
@@ -106,15 +113,11 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
           }
         }
       }
-      // console.log(node)
-      // console.log(types)
     }
-    // convert reactified components to Ext.create calls to put in the manifest
     else if (node.kind === SyntaxKind.JsxSelfClosingElement || node.kind === SyntaxKind.JsxOpeningElement) {
-      // console.log(`JSX found`, node)
+      // convert reactified components to Ext.create calls to put in the manifest
       const e = (node as ts.JsxSelfClosingElement | ts.JsxOpeningElement)
       const tag = (e.tagName as ts.Identifier).text
-      // console.log(node)
       const type = types[tag]
       if (type) {
         const configs = { ...type };
@@ -126,35 +129,18 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
                 configs[name] = `"${attribute.initializer.text}"`
               }
               else if (attribute.initializer.kind === SyntaxKind.JsxExpression) {
-                // console.log(attribute.initializer)
                 const { expression } = attribute.initializer
                 if (expression) {
                   if (expression.kind === SyntaxKind.ObjectLiteralExpression ||
                     expression.kind === SyntaxKind.ArrayLiteralExpression) {
-                    // console.log(expression.getText(sourceFile))
                     configs[name] = expression.getText(sourceFile)
-                    // console.log(configs[name])
                   }
                 }
-                // if (expression && expression.kind === SyntaxKind.FunctionExpression) {
-                //   configs[name] = (expression as any).text
-                // }
-                // try {
-                //     const { expression } = valueNode;
-
-                //     if (expression.type.indexOf('Function') === -1) {
-                //         let js = astring(valueNode.expression);
-                //         configs[name] = js;
-                //     }
-                // } catch (e) {
-                //     // will get here if the value contains jsx or something else that can't be converted back to js
-                // }
               }
             }
           }
         }
 
-        // console.log(configs)
         const values: string[] = [];
 
         for (let name in configs) {

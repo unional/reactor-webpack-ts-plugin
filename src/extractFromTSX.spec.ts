@@ -36,7 +36,7 @@ class ABC {
 })
 
 test('create with as any', t => {
-  const source =`
+  const source = `
 import { reactify } from '@extjs/reactor';
 
 import data from './data';
@@ -57,7 +57,7 @@ const X =  <Container
   ])
 })
 
-test('JSX', t=> {
+test('JSX', t => {
   const source = `
 import { reactify } from '@extjs/reactor'
 import { SomeComponent } from './SomeExtComponent'

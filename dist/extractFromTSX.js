@@ -23,25 +23,34 @@ function extractFromTSX(source, scriptTarget) {
     var sourceFile = ts.createSourceFile('foo.tsx', source, scriptTarget);
     var statements = [];
     var types = {};
-    var reactifyNames;
+    var reactifyNames = [];
+    var reactorNames = [];
     traverse(sourceFile);
     function traverse(node) {
         if (node.kind === typescript_1.SyntaxKind.ImportDeclaration) {
             var declaration = node;
             var moduleTokenName = declaration.moduleSpecifier.text;
             if (moduleTokenName.match(REACTOR_MODULE_PATTERN)) {
-                // console.log(node)
                 if (declaration.importClause && declaration.importClause.namedBindings) {
-                    var elements = declaration.importClause.namedBindings.elements;
-                    var reactifyNodes = elements.filter(function (e) {
-                        return (e.propertyName && e.propertyName.text === REACTIFY) || (e.name.text === REACTIFY);
-                    });
-                    reactifyNames = reactifyNodes.map(function (n) {
-                        return n.name.text;
-                    });
+                    if (declaration.importClause.namedBindings.kind === typescript_1.SyntaxKind.NamespaceImport) {
+                        // import * as reactor from '@extjs/reactor'
+                        reactorNames.push(declaration.importClause.namedBindings.name.text);
+                        reactifyNames = ['reactify'];
+                    }
+                    else if (declaration.importClause.namedBindings.kind === typescript_1.SyntaxKind.NamedImports) {
+                        // import { reactify } from '@extjs/reactor'
+                        var elements = declaration.importClause.namedBindings.elements;
+                        var reactifyNodes = elements.filter(function (e) {
+                            return (e.propertyName && e.propertyName.text === REACTIFY) || (e.name.text === REACTIFY);
+                        });
+                        reactifyNames.push.apply(reactifyNames, reactifyNodes.map(function (n) {
+                            return n.name.text;
+                        }));
+                    }
                 }
             }
             else if (moduleTokenName.match(COMPONENT_MODULE_PATTERN)) {
+                // import { Grid } from '@extjs/reactor/?
                 if (declaration.importClause && declaration.importClause.namedBindings) {
                     var elements = declaration.importClause.namedBindings.elements;
                     for (var _i = 0, elements_1 = elements; _i < elements_1.length; _i++) {
@@ -52,25 +61,27 @@ function extractFromTSX(source, scriptTarget) {
             }
         }
         else if (node.kind === typescript_1.SyntaxKind.VariableDeclaration) {
-            // console.log(node.getText(sourceFile))
-            // console.log(node)
             var d = node;
             if (d.initializer) {
                 var call = void 0;
                 if (d.initializer.kind === typescript_1.SyntaxKind.CallExpression) {
+                    // reactify(...)
                     call = d.initializer;
                 }
-                else if (d.initializer.kind == typescript_1.SyntaxKind.AsExpression && d.initializer.expression.kind === typescript_1.SyntaxKind.CallExpression) {
+                else if (d.initializer.kind === typescript_1.SyntaxKind.AsExpression && d.initializer.expression.kind === typescript_1.SyntaxKind.CallExpression) {
+                    // reactor.reactify(...)
                     call = d.initializer.expression;
                 }
                 if (call) {
-                    if (~reactifyNames.indexOf(call.expression.text)) {
+                    if (call.expression.kind === typescript_1.SyntaxKind.PropertyAccessExpression && ~reactorNames.indexOf(call.expression.expression.text) && ~reactifyNames.indexOf(call.expression.name.text) ||
+                        ~reactifyNames.indexOf(call.expression.text)) {
                         if (d.name.kind === typescript_1.SyntaxKind.Identifier) {
                             // example: const Grid = reactify('grid');
                             var varName = d.name.text;
                             var arg = call.arguments[0];
-                            if (!arg)
+                            if (!arg) {
                                 return;
+                            }
                             if (arg.kind === typescript_1.SyntaxKind.StringLiteral) {
                                 var xtype = arg.text;
                                 if (xtype) {
@@ -85,11 +96,13 @@ function extractFromTSX(source, scriptTarget) {
                             // example: const [ Grid, Panel ] = reactify('grid', SomePanel);
                             for (var i = 0; i < d.name.elements.length; i++) {
                                 var tagName = d.name.elements[i].name.text;
-                                if (!tagName)
+                                if (!tagName) {
                                     continue;
+                                }
                                 var arg = call.arguments[i];
-                                if (!arg)
+                                if (!arg) {
                                     continue;
+                                }
                                 if (arg.kind === typescript_1.SyntaxKind.StringLiteral) {
                                     var xtype = arg.text;
                                     if (xtype) {
@@ -106,10 +119,9 @@ function extractFromTSX(source, scriptTarget) {
             }
         }
         else if (node.kind === typescript_1.SyntaxKind.JsxSelfClosingElement || node.kind === typescript_1.SyntaxKind.JsxOpeningElement) {
-            // console.log(`JSX found`, node)
+            // convert reactified components to Ext.create calls to put in the manifest
             var e = node;
             var tag = e.tagName.text;
-            // console.log(node)
             var type = types[tag];
             if (type) {
                 var configs = __assign({}, type);
@@ -122,22 +134,10 @@ function extractFromTSX(source, scriptTarget) {
                                 configs[name_1] = "\"" + attribute.initializer.text + "\"";
                             }
                             else if (attribute.initializer.kind === typescript_1.SyntaxKind.JsxExpression) {
-                                // console.log(attribute.initializer)
                                 var expression = attribute.initializer.expression;
                                 if (expression) {
-                                    console.log(name_1, expression.kind);
-                                    if (expression.kind === typescript_1.SyntaxKind.TrueKeyword) {
-                                        configs[name_1] = true;
-                                    }
-                                    else if (expression.kind === typescript_1.SyntaxKind.FalseKeyword) {
-                                        configs[name_1] = false;
-                                    }
-                                    else if (expression.kind === typescript_1.SyntaxKind.NumericLiteral) {
-                                        configs[name_1] = expression.text;
-                                    }
-                                    else if (expression.kind === typescript_1.SyntaxKind.ObjectLiteralExpression ||
+                                    if (expression.kind === typescript_1.SyntaxKind.ObjectLiteralExpression ||
                                         expression.kind === typescript_1.SyntaxKind.ArrayLiteralExpression) {
-                                        // console.log(expression.getText(sourceFile))
                                         configs[name_1] = expression.getText(sourceFile);
                                     }
                                 }
@@ -145,7 +145,6 @@ function extractFromTSX(source, scriptTarget) {
                         }
                     }
                 }
-                // console.log(configs)
                 var values = [];
                 for (var name_2 in configs) {
                     values.push(name_2 + ": " + configs[name_2]);

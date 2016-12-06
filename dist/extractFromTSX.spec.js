@@ -2,6 +2,13 @@
 var ava_1 = require("ava");
 var typescript_1 = require("typescript");
 var extractFromTSX_1 = require("./extractFromTSX");
+ava_1.default('import *', function (t) {
+    var source = "\n  impport X = require('y')\n  import * as reactor from '@extjs/reactor'\n  const Grid = reactor.reactify('grid')\n  const Y = <Grid/>\n  ";
+    var actual = extractFromTSX_1.default(source, typescript_1.ScriptTarget.ES2016);
+    t.deepEqual(actual, [
+        'Ext.create({xtype: "grid"})'
+    ]);
+});
 ava_1.default('import declaration basic', function (t) {
     var source = "\nimport { reactify } from '@extjs/reactor'\nconst Grid = reactify<any, any>('grid')\nconst Panel = reactify('panel')\nconst [ X, Y ] = reactify('grid', 'panel')\n\nclass ABC {\n  render() {\n    return <X abc='def'><Y def='123'/></X>\n  }\n}\n";
     var actual = extractFromTSX_1.default(source, typescript_1.ScriptTarget.ES2016);
@@ -17,19 +24,19 @@ ava_1.default('create with as any', function (t) {
         "Ext.create({xtype: \"container\", plugins: \"responsive\"})"
     ]);
 });
-ava_1.default.only('JSX', function (t) {
+ava_1.default('JSX', function (t) {
     var source = "\nimport { reactify } from '@extjs/reactor'\nimport { SomeComponent } from './SomeExtComponent'\nfunction foo() {}\nconst Grid = reactify('grid');\nconst Y = <Grid string=\"foo\", number=1, bool=true, bool2 = false, expression={foo}, object={{x:1,y:2}} array={['a', { text: 'name' }] ref={this.store}/>\n";
     var actual = extractFromTSX_1.default(source, typescript_1.ScriptTarget.ES2016);
     // expression and ref are skipped.
     t.deepEqual(actual, [
-        "Ext.create({xtype: \"grid\", string: \"foo\", number: 1, bool: true, bool2: false, object: {x:1,y:2}, array: ['a', { text: 'name' }]})"
+        "Ext.create({xtype: \"grid\", string: \"foo\", object: {x:1,y:2}, array: ['a', { text: 'name' }]})"
     ]);
 });
 ava_1.default('import with ExtComponent', function (t) {
     var source = "\nimport { reactify } from '@extjs/reactor'\nimport { SomeComponent } from './SomeExtComponent'\nfunction foo() {}\nconst MyGrid = reactify(SomeComponent)\nconst Y = <MyGrid doSomething={foo}/>\n";
     var actual = extractFromTSX_1.default(source, typescript_1.ScriptTarget.ES2016);
     t.deepEqual(actual, [
-        'Ext.create({xclass: "SomeComponent", doSomething: foo})'
+        'Ext.create({xclass: "SomeComponent"})'
     ]);
 });
 ava_1.default('import declaration with rename', function (t) {

@@ -3,8 +3,6 @@
 const cp = require('child_process');
 
 let compiling = true;
-// TODO: `shell: true` seems to have problem on osx.
-// Need to verify and fix.
 cp.spawn('tsc', ['-w'], { shell: true })
   .stdout.on('data', () => {
     if (compiling) {

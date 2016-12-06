@@ -1,6 +1,6 @@
 {
-  "name": "@extjs/reactor-webpack-ts-plugin",
-  "version": "0.1.13",
+  "name": "reactor-webpack-ts-plugin",
+  "version": "0.2.0",
   "description": "Creates a minimal build of the Ext JS framework for use in React apps.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -16,16 +16,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sencha/extjs-reactor.git"
+    "url": "git+https://github.com/unional/reactor-webpack-ts-plugin.git"
   },
   "author": "unional",
   "license": "MIT",
-  "homepage": "https://github.com/sencha/extjs-reactor/tree/master/packages/reactor-webpack-ts-plugin",
+  "homepage": "https://github.com/unional/reactor-webpack-ts-plugin",
   "dependencies": {
     "astring": "^0.8.0",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.4",
-    "typescript": "^2.2.0-dev.20161203",
+    "typescript": "^2.2.0-dev.20161205",
     "xtend": "^4.0.1"
   },
   "devDependencies": {
