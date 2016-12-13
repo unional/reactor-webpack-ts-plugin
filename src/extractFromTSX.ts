@@ -87,11 +87,9 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
             // example: const Grid = reactify('grid');
             const varName = node.name.text
             const arg = call.arguments[0]
-            if (!arg) {
-              return
+            if (arg) {
+              addToTypes(varName, arg)
             }
-
-            addToTypes(varName, arg)
           }
           else if (isSyntaxKind<ts.ArrayBindingPattern>(node.name, SyntaxKind.ArrayBindingPattern)) {
             // example: const [ Grid, Panel ] = reactify('grid', SomePanel);
@@ -100,14 +98,10 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
               if (isSyntaxKind<ts.BindingElement>(element, SyntaxKind.BindingElement) &&
                 isSyntaxKind<ts.Identifier>(element.name, SyntaxKind.Identifier)) {
                 const tagName = element.name.text
-                if (!tagName) {
-                  continue
-                }
                 const arg = call.arguments[i]
-                if (!arg) {
-                  continue
+                if (tagName && arg) {
+                  addToTypes(tagName, arg)
                 }
-                addToTypes(tagName, arg)
               }
             }
           }

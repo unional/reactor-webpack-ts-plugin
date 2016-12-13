@@ -20,7 +20,7 @@ test('import declaration basic', t => {
 import { reactify } from '@extjs/reactor'
 const Grid = reactify<any, any>('grid')
 const Panel = reactify('panel')
-const [ X, Y ] = reactify('grid', 'panel')
+const [ X, ,Y ] = reactify('grid', 'textbox', 'panel')
 
 class ABC {
   render() {

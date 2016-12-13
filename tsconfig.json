@@ -1,16 +1,7 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "es2015",
-      "dom"
-    ],
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "newLine": "LF",
-    "noImplicitAny": false,
-    "outDir": "spec-out",
-    "strictNullChecks": true,
-    "target": "es5"
+    "outDir": "spec-out"
   },
   "atom": {
     "rewriteTsconfig": false
@@ -19,7 +10,6 @@
   "compileOnSave": false,
   "include": [
     "src/**/*",
-    "custom-typings/*",
     "typings/index.d.ts"
   ]
 }

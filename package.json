@@ -32,6 +32,12 @@
       "src/**/*.ts"
     ]
   },
+  "nyc": {
+    "exclude": [
+      "scripts",
+      "**/*.spec.*"
+    ]
+  },
   "dependencies": {
     "astring": "^0.8.0",
     "mkdirp": "^0.5.1",

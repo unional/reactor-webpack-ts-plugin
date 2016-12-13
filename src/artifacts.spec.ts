@@ -10,8 +10,8 @@ test('createWorkspaceJson', t => {
   t.is(actual.frameworks.ext, '../../ext')
 })
 
-test('createAppJson', t=> {
-  const actualJson = createAppJson({ theme: 'theme-material', packages: ['charts'], toolkit: 'modern'})
+test('createAppJson', t => {
+  const actualJson = createAppJson({ theme: 'theme-material', packages: ['charts'], toolkit: 'modern' })
   const actual = JSON.parse(actualJson)
   t.is(actual.framework, 'ext')
   t.is(actual.toolkit, 'modern')

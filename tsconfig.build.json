@@ -1,11 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "inlineSources": true,
-    "outDir": "dist",
-    "sourceMap": true
+    "outDir": "dist"
   },
   "files": [
     "src/index.ts"
+  ],
+  "include": [
+    "typings/index.d.ts"
   ]
 }
