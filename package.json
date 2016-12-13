@@ -5,15 +5,17 @@
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
     "lint": "tslint \"src/**/*.ts\"",
-    "test": "rimraf spec-out && tsc && ava \"spec-out/**/*.spec.js\"",
-    "watch": "rimraf spec-out && node scripts/watch.js spec-out/**/*.spec.js",
-    "verify": "npm run test && npm run lint && npm run dependency-check && npm run build",
+    "test": "rimraf spec-out && tsc && nyc ava",
+    "watch": "rimraf spec-out && node scripts/watch.js",
+    "coverage": "npm test && nyc check-coverage --lines 85 --functions 85 --branches 85",
+    "verify": "npm run coverage && npm run lint && npm run dependency-check && npm run build",
     "dependency-check": "dependency-check . --unused --no-dev && dependency-check . --missing --no-dev",
     "preversion": "npm run verify",
     "prepare": "typings install",
-    "prepublishOnly": "rimraf dist && npm run build"
+    "prepublishOnly": "npm run build",
+    "postpublish": "git push"
   },
   "repository": {
     "type": "git",
@@ -22,6 +24,14 @@
   "author": "unional",
   "license": "MIT",
   "homepage": "https://github.com/unional/reactor-webpack-ts-plugin",
+  "ava": {
+    "files": [
+      "spec-out/**/*.spec.js"
+    ],
+    "source": [
+      "src/**/*.ts"
+    ]
+  },
   "dependencies": {
     "astring": "^0.8.0",
     "mkdirp": "^0.5.1",
@@ -35,6 +45,7 @@
     "@types/xtend": "^4.0.2",
     "ava": "^0.17.0",
     "dependency-check": "^2.6.0",
+    "nyc": "^10.0.0",
     "tslint": "^4.0.2",
     "tslint-config-unional": "^0.6.0",
     "typings": "^2.0.0"
