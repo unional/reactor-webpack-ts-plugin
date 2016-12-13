@@ -40,5 +40,6 @@ jspm_packages/
 # typings
 /typings/
 
-# test folder
+# project folders
 spec-out
+dist
