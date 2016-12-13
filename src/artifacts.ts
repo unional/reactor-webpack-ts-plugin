@@ -1,3 +1,5 @@
+import { relative } from 'path'
+
 export const buildXML = `
 <project name="simple-build" basedir=".">
     <!--  internally, watch calls the init target, so need to have one here -->
@@ -118,10 +120,10 @@ export function createAppJson({ theme, packages, toolkit }) {
  * Creates the workspace.json file
  * @param {String} sdk The path to the sdk
  */
-export function createWorkspaceJson(sdk) {
+export function createWorkspaceJson(sdk, outputDir) {
     return JSON.stringify({
         'frameworks': {
-            'ext': sdk
+            'ext': relative(outputDir, sdk)
         },
         'packages': {
             'dir': '${workspace.dir}/packages/local,${workspace.dir}/packages',
