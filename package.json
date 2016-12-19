@@ -10,11 +10,10 @@
     "test": "rimraf spec-out && tsc && nyc ava",
     "watch": "rimraf spec-out && node scripts/watch.js",
     "coverage": "npm test && nyc check-coverage --lines 85 --functions 85 --branches 85",
-    "verify": "npm run coverage && npm run lint && npm run dependency-check && npm run build",
+    "verify": "npm run coverage && npm run lint && npm run build && npm run dependency-check",
     "dependency-check": "dependency-check . --unused --no-dev && dependency-check . --missing --no-dev",
     "preversion": "npm run verify",
-    "prepare": "typings install",
-    "prepublishOnly": "npm run build",
+    "prepare": "typings install && npm run build",
     "postpublish": "git push"
   },
   "repository": {
