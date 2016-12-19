@@ -13,7 +13,7 @@
     "verify": "npm run coverage && npm run lint && npm run build && npm run dependency-check",
     "dependency-check": "dependency-check . --unused --no-dev && dependency-check . --missing --no-dev",
     "preversion": "npm run verify",
-    "prepublish": "typings install && npm run build",
+    "prepare": "typings install && npm run build",
     "postpublish": "git push"
   },
   "repository": {
