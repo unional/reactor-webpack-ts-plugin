@@ -40,7 +40,7 @@
   "dependencies": {
     "astring": "^0.8.0",
     "mkdirp": "^0.5.1",
-    "rimraf": "^2.5.4",
+    "rimraf": "2.5.4",
     "typescript": "^2.2.0-dev.20161205",
     "xtend": "^4.0.1"
   },
