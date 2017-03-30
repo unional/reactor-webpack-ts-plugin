@@ -1,6 +1,6 @@
 {
   "name": "reactor-webpack-ts-plugin",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Creates a minimal build of the Ext JS framework for use in React apps.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
