@@ -22,7 +22,6 @@
   "compileOnSave": false,
   "include": [
     "src/**/*",
-    "custom-typings/*",
-    "typings/index.d.ts"
+    "custom-typings/*"
   ]
 }
