@@ -127,19 +127,15 @@ export default class ReactExtJSWebpackTSPlugin {
       if (compiler.outputPath === '/' && compiler.options.devServer) {
         outputPath = path.join(compiler.options.devServer.contentBase, outputPath);
       }
-      console.log(`outputPath: ${outputPath}`)
+
       this._buildExtBundle('ext', modules, outputPath, build)
         .then(() => {
           // the following is needed for html-webpack-plugin to include <script> and <link> tags for Ext JS
           const jsChunk = compilation.addChunk(`${this.options.output}-js`);
-          jsChunk.initial = true;
-          jsChunk.ids = [0]; // html-webpack-plugin needs ids to be defined so that it can fetch webpack stats
+          jsChunk.isInitial = () => true;
           jsChunk.files.push(path.join(this.options.output, 'ext.js'));
           jsChunk.files.push(path.join(this.options.output, 'ext.css'));
-
-          // this forces html-webpack-plugin to include ext.js first
-          jsChunk.entry = true;
-          jsChunk.id = 9999;
+          jsChunk.id = -1; // this forces html-webpack-plugin to include ext.js first
 
           callback();
         })
