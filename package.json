@@ -41,6 +41,7 @@
     ]
   },
   "dependencies": {
+    "@extjs/reactor-webpack-plugin": "^0.2.17",
     "astring": "^0.9.1",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.4",
