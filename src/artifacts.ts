@@ -101,19 +101,19 @@ export const buildXML = `
  * @param {String[]} packages The names of packages to include in the build
  */
 export function createAppJson({ theme, packages, toolkit }) {
-    return JSON.stringify({
-        framework: 'ext',
-        toolkit,
-        theme,
-        requires: packages,
-        output: {
-            base: '.',
-            resources: {
-                path: './resources',
-                shared: './resources'
-            }
-        }
-    }, null, 4);
+  return JSON.stringify({
+    framework: 'ext',
+    toolkit,
+    theme,
+    requires: packages,
+    output: {
+      base: '.',
+      resources: {
+        path: './resources',
+        shared: './resources'
+      }
+    }
+  }, null, 4);
 }
 
 /**
@@ -121,13 +121,13 @@ export function createAppJson({ theme, packages, toolkit }) {
  * @param {String} sdk The path to the sdk
  */
 export function createWorkspaceJson(sdk, outputDir) {
-    return JSON.stringify({
-        'frameworks': {
-            'ext': relative(outputDir, sdk)
-        },
-        'packages': {
-            'dir': '${workspace.dir}/packages/local,${workspace.dir}/packages',
-            'extract': '${workspace.dir}/packages/remote'
-        }
-    }, null, 4);
+  return JSON.stringify({
+    'frameworks': {
+      'ext': relative(outputDir, sdk)
+    },
+    'packages': {
+      'dir': '${workspace.dir}/packages/local,${workspace.dir}/packages',
+      'extract': '${workspace.dir}/packages/remote'
+    }
+  }, null, 4);
 }

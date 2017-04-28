@@ -53,7 +53,7 @@ const X =  <Container
 `
   const actual = extractFromTSX(source, ScriptTarget.ES2016)
   t.deepEqual(actual, [
-  `Ext.create({xtype: "container", plugins: "responsive"})`
+    `Ext.create({xtype: "container", plugins: "responsive"})`
   ])
 })
 
@@ -69,7 +69,7 @@ const Y = <Grid string="foo", number=1, bool=true, bool2 = false, expression={fo
 
   // expression and ref are skipped.
   t.deepEqual(actual, [
-  `Ext.create({xtype: "grid", string: "foo", object: {x:1,y:2}, array: ['a', { text: 'name' }]})`
+    `Ext.create({xtype: "grid", string: "foo", object: {x:1,y:2}, array: ['a', { text: 'name' }]})`
   ])
 })
 

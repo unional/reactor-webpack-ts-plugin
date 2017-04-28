@@ -114,7 +114,8 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
       const type = types[node.tagName.text]
       if (type) {
         const configs = { ...type };
-        for (let attribute of node.attributes) {
+
+        node.attributes.forEachChild(attribute => {
           if (isSyntaxKind<ts.JsxAttribute>(attribute, SyntaxKind.JsxAttribute)) {
             const name = attribute.name.text
             if (isSyntaxKind<ts.StringLiteral>(attribute.initializer, SyntaxKind.StringLiteral)) {
@@ -129,7 +130,7 @@ export default function extractFromTSX(source, scriptTarget: ts.ScriptTarget) {
               }
             }
           }
-        }
+        })
 
         const values: string[] = []
 
