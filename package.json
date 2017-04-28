@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@extjs/reactor-webpack-plugin": "^0.2.17",
-    "typescript": "^2.2.2"
+    "typescript": "^2.3.2"
   },
   "devDependencies": {
     "@types/mkdirp": "^0.3.29",
