@@ -53,7 +53,7 @@
     "dependency-check": "^2.6.0",
     "nyc": "^10.0.0",
     "tslint": "^5.0.0",
-    "tslint-config-unional": "^0.7.0",
+    "tslint-config-unional": "^0.8.0",
     "webpack": "^2.4.1"
   }
 }
