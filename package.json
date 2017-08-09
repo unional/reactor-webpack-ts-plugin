@@ -47,7 +47,7 @@
   "devDependencies": {
     "@types/mkdirp": "^0.5.0",
     "@types/node": "^8.0.0",
-    "@types/rimraf": "0.0.28",
+    "@types/rimraf": "2.0.0",
     "@types/xtend": "^4.0.2",
     "ava": "^0.21.0",
     "dependency-check": "^2.6.0",
