@@ -1,5 +1,7 @@
 # Ext JS Reactor Webpack TypeScript Plugin
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/unional/reactor-webpack-ts-plugin.svg)](https://greenkeeper.io/)
+
 This [Webpack](http://webpack.github.io/) plugin produces a minimized build of the [Sencha Ext JS](https://www.sencha.com/products/extjs) framework containing only those classes used by your React app.
 Use with the `extjs-reactor`.
 
